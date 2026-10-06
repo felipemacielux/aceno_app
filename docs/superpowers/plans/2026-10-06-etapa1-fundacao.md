@@ -136,7 +136,8 @@ asyncpg==0.30.0
 alembic==1.13.3
 pydantic==2.9.2
 pydantic-settings==2.6.0
-passlib[bcrypt]==1.7.4
+passlib==1.7.4
+bcrypt==4.0.1
 pytest==8.3.3
 httpx==0.27.2
 ```
