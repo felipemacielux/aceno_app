@@ -5,9 +5,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.deps import get_db, get_usuario_atual
 from app.exceptions import CredenciaisInvalidas
 from app.models import UsuarioOperacao
-from app.schemas import LoginRequest, LoginResponse, MesaOut
+from app.schemas import LoginRequest, LoginResponse, MesaOut, SolicitacaoOut
 from app.security import criar_token, verificar_senha
-from app.services import mesa_service
+from app.services import mesa_service, solicitacao_service
 
 router = APIRouter(prefix="/api/operacao", tags=["operacao"])
 
@@ -45,3 +45,27 @@ async def fechar_mesa(
 ) -> MesaOut:
     mesa = await mesa_service.fechar_mesa(session, mesa_id)
     return MesaOut.model_validate(mesa)
+
+
+@router.get("/solicitacoes", response_model=list[SolicitacaoOut])
+async def listar_solicitacoes(
+    session: AsyncSession = Depends(get_db), _usuario: dict = Depends(get_usuario_atual)
+) -> list[SolicitacaoOut]:
+    solicitacoes = await solicitacao_service.listar_solicitacoes(session)
+    return [SolicitacaoOut.model_validate(s) for s in solicitacoes]
+
+
+@router.post("/solicitacoes/{solicitacao_id}/aceitar", response_model=SolicitacaoOut)
+async def aceitar(
+    solicitacao_id: int, session: AsyncSession = Depends(get_db), _usuario: dict = Depends(get_usuario_atual)
+) -> SolicitacaoOut:
+    solicitacao = await solicitacao_service.aceitar_solicitacao(session, solicitacao_id)
+    return SolicitacaoOut.model_validate(solicitacao)
+
+
+@router.post("/solicitacoes/{solicitacao_id}/concluir", response_model=SolicitacaoOut)
+async def concluir(
+    solicitacao_id: int, session: AsyncSession = Depends(get_db), _usuario: dict = Depends(get_usuario_atual)
+) -> SolicitacaoOut:
+    solicitacao = await solicitacao_service.concluir_solicitacao(session, solicitacao_id)
+    return SolicitacaoOut.model_validate(solicitacao)

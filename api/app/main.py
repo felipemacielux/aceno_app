@@ -2,9 +2,10 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 from app.exceptions import ErroNegocio
-from app.routers import operacao
+from app.routers import cliente, operacao
 
 app = FastAPI(title="Chamar Garçom API")
+app.include_router(cliente.router)
 app.include_router(operacao.router)
 
 
