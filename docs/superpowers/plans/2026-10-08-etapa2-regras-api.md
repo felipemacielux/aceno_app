@@ -79,8 +79,8 @@ api/
 `api/tests/test_auth.py`:
 
 ```python
-def test_login_com_credenciais_corretas_retorna_token(client, usuario):
-    response = client.post(
+async def test_login_com_credenciais_corretas_retorna_token(client, usuario):
+    response = await client.post(
         "/api/operacao/login", json={"username": usuario.username, "senha": "senha123"}
     )
     assert response.status_code == 200
@@ -89,16 +89,16 @@ def test_login_com_credenciais_corretas_retorna_token(client, usuario):
     assert body["token_type"] == "bearer"
 
 
-def test_login_com_senha_errada_retorna_401(client, usuario):
-    response = client.post(
+async def test_login_com_senha_errada_retorna_401(client, usuario):
+    response = await client.post(
         "/api/operacao/login", json={"username": usuario.username, "senha": "errada"}
     )
     assert response.status_code == 401
     assert response.json()["erro"] == "credenciais_invalidas"
 
 
-def test_login_com_usuario_inexistente_retorna_401(client):
-    response = client.post(
+async def test_login_com_usuario_inexistente_retorna_401(client):
+    response = await client.post(
         "/api/operacao/login", json={"username": "ninguem", "senha": "x"}
     )
     assert response.status_code == 401
@@ -319,12 +319,12 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+import httpx
 import pytest
-from fastapi.testclient import TestClient
 from passlib.hash import bcrypt
 from sqlalchemy import text
 
-from app.db import async_session
+from app.db import async_session, engine
 from app.main import app
 from app.models import Estabelecimento, UsuarioOperacao
 
@@ -340,11 +340,17 @@ async def limpar_banco():
         )
         await session.commit()
     yield
+    # pytest-asyncio abre um novo event loop por teste; conexões pooladas do
+    # loop anterior quebram no próximo teste ("another operation is in
+    # progress"). Descartar o pool força reconexão limpa a cada teste.
+    await engine.dispose()
 
 
 @pytest.fixture
-def client():
-    return TestClient(app)
+async def client():
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as ac:
+        yield ac
 
 
 @pytest.fixture
