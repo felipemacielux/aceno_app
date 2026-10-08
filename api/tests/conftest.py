@@ -3,6 +3,8 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from datetime import UTC, datetime
+
 import httpx
 import pytest
 from passlib.hash import bcrypt
@@ -10,7 +12,8 @@ from sqlalchemy import text
 
 from app.db import async_session, engine
 from app.main import app
-from app.models import Estabelecimento, UsuarioOperacao
+from app.models import Estabelecimento, Mesa, StatusMesa, UsuarioOperacao
+from app.security import criar_token
 
 
 @pytest.fixture(autouse=True)
@@ -64,3 +67,29 @@ async def usuario(estabelecimento):
         await session.commit()
         await session.refresh(u)
         return u
+
+
+@pytest.fixture
+def token_operacao(usuario):
+    return criar_token({"sub": usuario.username, "estabelecimento_id": usuario.estabelecimento_id})
+
+
+@pytest.fixture
+async def mesa(estabelecimento):
+    async with async_session() as session:
+        m = Mesa(estabelecimento_id=estabelecimento.id, numero=1, token="token-teste")
+        session.add(m)
+        await session.commit()
+        await session.refresh(m)
+        return m
+
+
+@pytest.fixture
+async def mesa_aberta(mesa):
+    async with async_session() as session:
+        m = await session.get(Mesa, mesa.id)
+        m.status = StatusMesa.aberta
+        m.aberta_em = datetime.now(UTC)
+        await session.commit()
+        await session.refresh(m)
+        return m
