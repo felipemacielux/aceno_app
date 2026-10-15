@@ -6,6 +6,8 @@ from sqlalchemy.orm import selectinload
 
 from app.exceptions import MesaNaoEncontrada
 from app.models import Mesa, Solicitacao, StatusMesa, StatusSolicitacao
+from app.schemas import MesaClienteOut, SolicitacaoOut
+from app.services import solicitacao_service
 
 
 async def buscar_mesa_por_token(session: AsyncSession, token: str) -> Mesa:
@@ -32,6 +34,20 @@ async def buscar_mesa_por_id(session: AsyncSession, mesa_id: int) -> Mesa:
 
 async def listar_mesas(session: AsyncSession) -> list[Mesa]:
     return (await session.execute(select(Mesa).order_by(Mesa.numero))).scalars().all()
+
+
+async def obter_estado_cliente(session: AsyncSession, token: str) -> MesaClienteOut:
+    mesa = await buscar_mesa_por_token(session, token)
+    ativas = await solicitacao_service.listar_ativas_por_mesa(session, mesa.id)
+    return MesaClienteOut(
+        numero=mesa.numero,
+        status=mesa.status,
+        nome_estabelecimento=mesa.estabelecimento.nome,
+        wifi_ssid=mesa.estabelecimento.wifi_ssid,
+        wifi_senha=mesa.estabelecimento.wifi_senha,
+        cardapio_url=mesa.estabelecimento.cardapio_url,
+        solicitacoes_ativas=[SolicitacaoOut.model_validate(s) for s in ativas],
+    )
 
 
 async def abrir_mesa(session: AsyncSession, mesa_id: int) -> Mesa:

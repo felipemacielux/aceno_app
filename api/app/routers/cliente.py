@@ -11,17 +11,7 @@ router = APIRouter(prefix="/api/m", tags=["cliente"])
 
 @router.get("/{token}", response_model=MesaClienteOut)
 async def obter_mesa(token: str, session: AsyncSession = Depends(get_db)) -> MesaClienteOut:
-    mesa = await mesa_service.buscar_mesa_por_token(session, token)
-    ativas = await solicitacao_service.listar_ativas_por_mesa(session, mesa.id)
-    return MesaClienteOut(
-        numero=mesa.numero,
-        status=mesa.status,
-        nome_estabelecimento=mesa.estabelecimento.nome,
-        wifi_ssid=mesa.estabelecimento.wifi_ssid,
-        wifi_senha=mesa.estabelecimento.wifi_senha,
-        cardapio_url=mesa.estabelecimento.cardapio_url,
-        solicitacoes_ativas=[SolicitacaoOut.model_validate(s) for s in ativas],
-    )
+    return await mesa_service.obter_estado_cliente(session, token)
 
 
 @router.post("/{token}/chamar-garcom", response_model=SolicitacaoOut, status_code=201)
