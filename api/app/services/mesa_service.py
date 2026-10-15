@@ -6,8 +6,9 @@ from sqlalchemy.orm import selectinload
 
 from app.exceptions import MesaNaoEncontrada
 from app.models import Mesa, Solicitacao, StatusMesa, StatusSolicitacao
-from app.schemas import MesaClienteOut, SolicitacaoOut
+from app.schemas import MesaClienteOut, MesaOut, SolicitacaoOut
 from app.services import solicitacao_service
+from app.ws.manager import manager
 
 
 async def buscar_mesa_por_token(session: AsyncSession, token: str) -> Mesa:
@@ -56,6 +57,9 @@ async def abrir_mesa(session: AsyncSession, mesa_id: int) -> Mesa:
         mesa.status = StatusMesa.aberta
         mesa.aberta_em = datetime.now(UTC)
         await session.commit()
+        dados = MesaOut.model_validate(mesa).model_dump(mode="json")
+        await manager.emitir_mesa(mesa.token, "mesa.atualizada", dados)
+        await manager.emitir_operacao("mesa.atualizada", dados)
     return mesa
 
 
@@ -80,4 +84,12 @@ async def fechar_mesa(session: AsyncSession, mesa_id: int) -> Mesa:
         mesa.status = StatusMesa.fechada
         mesa.aberta_em = None
         await session.commit()
+
+        dados_mesa = MesaOut.model_validate(mesa).model_dump(mode="json")
+        await manager.emitir_mesa(mesa.token, "mesa.atualizada", dados_mesa)
+        await manager.emitir_operacao("mesa.atualizada", dados_mesa)
+        for solicitacao in ativas:
+            dados_solicitacao = SolicitacaoOut.model_validate(solicitacao).model_dump(mode="json")
+            await manager.emitir_mesa(mesa.token, "solicitacao.atualizada", dados_solicitacao)
+            await manager.emitir_operacao("solicitacao.atualizada", dados_solicitacao)
     return mesa
