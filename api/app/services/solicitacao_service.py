@@ -13,9 +13,22 @@ from app.exceptions import (
     SolicitacaoNaoEncontrada,
 )
 from app.models import FormaPagamento, Mesa, Solicitacao, StatusMesa, StatusSolicitacao, TipoSolicitacao
+from app.schemas import SolicitacaoOut
+from app.ws.manager import manager
 
 ATIVOS = (StatusSolicitacao.pendente, StatusSolicitacao.em_atendimento)
 CONCLUIDOS = (StatusSolicitacao.concluido, StatusSolicitacao.cancelado)
+
+
+async def _token_mesa(session: AsyncSession, mesa_id: int) -> str:
+    return (await session.execute(select(Mesa.token).where(Mesa.id == mesa_id))).scalar_one()
+
+
+async def _emitir_solicitacao(session: AsyncSession, solicitacao: Solicitacao, tipo: str) -> None:
+    token = await _token_mesa(session, solicitacao.mesa_id)
+    dados = SolicitacaoOut.model_validate(solicitacao).model_dump(mode="json")
+    await manager.emitir_mesa(token, tipo, dados)
+    await manager.emitir_operacao(tipo, dados)
 
 
 async def _validar_sem_ativa(session: AsyncSession, mesa: Mesa, tipo: TipoSolicitacao) -> None:
@@ -64,6 +77,7 @@ async def criar_solicitacao(
     session.add(solicitacao)
     await session.commit()
     await session.refresh(solicitacao)
+    await _emitir_solicitacao(session, solicitacao, "solicitacao.criada")
     return solicitacao
 
 
@@ -80,6 +94,7 @@ async def cancelar_solicitacao(session: AsyncSession, solicitacao_id: int, mesa_
     solicitacao.status = StatusSolicitacao.cancelado
     solicitacao.concluido_em = datetime.now(UTC)
     await session.commit()
+    await _emitir_solicitacao(session, solicitacao, "solicitacao.atualizada")
     return solicitacao
 
 
@@ -99,6 +114,7 @@ async def aceitar_solicitacao(session: AsyncSession, solicitacao_id: int) -> Sol
             raise SolicitacaoNaoEncontrada()
         raise AceiteConcorrente()
     await session.commit()
+    await _emitir_solicitacao(session, solicitacao, "solicitacao.atualizada")
     return solicitacao
 
 
@@ -113,6 +129,7 @@ async def concluir_solicitacao(session: AsyncSession, solicitacao_id: int) -> So
     solicitacao.status = StatusSolicitacao.concluido
     solicitacao.concluido_em = datetime.now(UTC)
     await session.commit()
+    await _emitir_solicitacao(session, solicitacao, "solicitacao.atualizada")
     return solicitacao
 
 

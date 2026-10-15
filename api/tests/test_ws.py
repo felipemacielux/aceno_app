@@ -47,3 +47,14 @@ def test_ws_operacao_token_valido_recebe_estado_inicial(token_operacao, mesa_abe
         assert "mesas" in mensagem["dados"]
         assert "solicitacoes" in mensagem["dados"]
         assert any(m["id"] == mesa_aberta.id for m in mensagem["dados"]["mesas"])
+
+
+def test_criar_solicitacao_via_rest_notifica_ws_da_mesa(mesa_aberta):
+    client = TestClient(app)
+    with client.websocket_connect(f"/ws/m/{mesa_aberta.token}") as ws:
+        ws.receive_json()  # estado.inicial
+        resposta = client.post(f"/api/m/{mesa_aberta.token}/chamar-garcom")
+        assert resposta.status_code == 201
+        evento = ws.receive_json()
+        assert evento["tipo"] == "solicitacao.criada"
+        assert evento["dados"]["mesa_id"] == mesa_aberta.id
