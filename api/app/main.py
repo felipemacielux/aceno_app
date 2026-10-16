@@ -1,10 +1,22 @@
+import asyncio
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 from app.exceptions import ErroNegocio
+from app.jobs.urgencia import loop_urgencia
 from app.routers import cliente, operacao, ws
 
-app = FastAPI(title="Chamar Garçom API")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    tarefa = asyncio.create_task(loop_urgencia())
+    yield
+    tarefa.cancel()
+
+
+app = FastAPI(title="Chamar Garçom API", lifespan=lifespan)
 app.include_router(cliente.router)
 app.include_router(operacao.router)
 app.include_router(ws.router)

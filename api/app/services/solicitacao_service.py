@@ -1,4 +1,4 @@
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -12,7 +12,15 @@ from app.exceptions import (
     SolicitacaoAtiva,
     SolicitacaoNaoEncontrada,
 )
-from app.models import FormaPagamento, Mesa, Solicitacao, StatusMesa, StatusSolicitacao, TipoSolicitacao
+from app.models import (
+    Estabelecimento,
+    FormaPagamento,
+    Mesa,
+    Solicitacao,
+    StatusMesa,
+    StatusSolicitacao,
+    TipoSolicitacao,
+)
 from app.schemas import SolicitacaoOut
 from app.ws.manager import manager
 
@@ -131,6 +139,29 @@ async def concluir_solicitacao(session: AsyncSession, solicitacao_id: int) -> So
     await session.commit()
     await _emitir_solicitacao(session, solicitacao, "solicitacao.atualizada")
     return solicitacao
+
+
+async def marcar_urgentes(session: AsyncSession) -> list[Solicitacao]:
+    estabelecimento = (await session.execute(select(Estabelecimento))).scalars().first()
+    if estabelecimento is None:
+        return []
+    limite = datetime.now(UTC) - timedelta(seconds=estabelecimento.cfg_urgente_seg)
+    resultado = await session.execute(
+        update(Solicitacao)
+        .where(
+            Solicitacao.status == StatusSolicitacao.pendente,
+            Solicitacao.urgente.is_(False),
+            Solicitacao.criado_em < limite,
+        )
+        .values(urgente=True)
+        .returning(Solicitacao)
+    )
+    atualizados = resultado.scalars().all()
+    if atualizados:
+        await session.commit()
+        for solicitacao in atualizados:
+            await _emitir_solicitacao(session, solicitacao, "solicitacao.atualizada")
+    return atualizados
 
 
 async def listar_ativas_por_mesa(session: AsyncSession, mesa_id: int) -> list[Solicitacao]:
