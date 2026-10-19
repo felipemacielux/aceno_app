@@ -51,4 +51,6 @@ class MesaClienteOut(BaseModel):
     wifi_ssid: str
     wifi_senha: str
     cardapio_url: str
+    cfg_cooldown_seg: int
+    cooldowns: dict[TipoSolicitacao, datetime | None]
     solicitacoes_ativas: list[SolicitacaoOut]

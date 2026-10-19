@@ -63,3 +63,49 @@ async def test_buscar_mesa_inexistente_levanta_erro():
     async with async_session() as session:
         with pytest.raises(MesaNaoEncontrada):
             await mesa_service.buscar_mesa_por_id(session, 999999)
+
+
+async def test_obter_estado_cliente_inclui_cooldowns_da_sessao_atual(mesa):
+    async with async_session() as session:
+        m = await session.get(Mesa, mesa.id)
+        m.status = StatusMesa.aberta
+        m.aberta_em = datetime(2026, 1, 1, tzinfo=UTC)
+        await session.commit()
+
+        concluida = Solicitacao(
+            mesa_id=mesa.id,
+            tipo=TipoSolicitacao.chamar_garcom,
+            status=StatusSolicitacao.concluido,
+            criado_em=datetime(2026, 1, 1, 0, 1, tzinfo=UTC),
+            concluido_em=datetime(2026, 1, 1, 0, 2, tzinfo=UTC),
+        )
+        session.add(concluida)
+        await session.commit()
+
+    async with async_session() as session:
+        estado = await mesa_service.obter_estado_cliente(session, mesa.token)
+        assert estado.cfg_cooldown_seg == 30
+        assert estado.cooldowns[TipoSolicitacao.chamar_garcom] == datetime(2026, 1, 1, 0, 2, tzinfo=UTC)
+        assert estado.cooldowns[TipoSolicitacao.fechar_conta] is None
+
+
+async def test_obter_estado_cliente_ignora_cooldown_de_sessao_anterior(mesa):
+    async with async_session() as session:
+        m = await session.get(Mesa, mesa.id)
+        m.status = StatusMesa.aberta
+        m.aberta_em = datetime(2026, 1, 2, tzinfo=UTC)
+        await session.commit()
+
+        velha = Solicitacao(
+            mesa_id=mesa.id,
+            tipo=TipoSolicitacao.chamar_garcom,
+            status=StatusSolicitacao.concluido,
+            criado_em=datetime(2026, 1, 1, 0, 1, tzinfo=UTC),
+            concluido_em=datetime(2026, 1, 1, 0, 2, tzinfo=UTC),
+        )
+        session.add(velha)
+        await session.commit()
+
+    async with async_session() as session:
+        estado = await mesa_service.obter_estado_cliente(session, mesa.token)
+        assert estado.cooldowns[TipoSolicitacao.chamar_garcom] is None
