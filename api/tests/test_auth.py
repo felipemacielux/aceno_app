@@ -21,3 +21,11 @@ async def test_login_com_usuario_inexistente_retorna_401(client):
         "/api/operacao/login", json={"username": "ninguem", "senha": "x"}
     )
     assert response.status_code == 401
+
+
+async def test_login_retorna_nome_do_estabelecimento(client, usuario):
+    response = await client.post(
+        "/api/operacao/login", json={"username": usuario.username, "senha": "senha123"}
+    )
+    assert response.status_code == 200
+    assert response.json()["nome_estabelecimento"] == "Restaurante Teste"

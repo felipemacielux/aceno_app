@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.deps import get_db, get_usuario_atual
 from app.exceptions import CredenciaisInvalidas
-from app.models import UsuarioOperacao
+from app.models import Estabelecimento, UsuarioOperacao
 from app.schemas import LoginRequest, LoginResponse, MesaOut, SolicitacaoOut
 from app.security import criar_token, verificar_senha
 from app.services import mesa_service, solicitacao_service
@@ -19,8 +19,13 @@ async def login(dados: LoginRequest, session: AsyncSession = Depends(get_db)) ->
     ).scalars().first()
     if usuario is None or not verificar_senha(dados.senha, usuario.senha_hash):
         raise CredenciaisInvalidas()
+    nome_estabelecimento = (
+        await session.execute(
+            select(Estabelecimento.nome).where(Estabelecimento.id == usuario.estabelecimento_id)
+        )
+    ).scalar_one()
     token = criar_token({"sub": usuario.username, "estabelecimento_id": usuario.estabelecimento_id})
-    return LoginResponse(access_token=token)
+    return LoginResponse(access_token=token, nome_estabelecimento=nome_estabelecimento)
 
 
 @router.get("/mesas", response_model=list[MesaOut])

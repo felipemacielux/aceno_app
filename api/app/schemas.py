@@ -13,6 +13,7 @@ class LoginRequest(BaseModel):
 class LoginResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
+    nome_estabelecimento: str
 
 
 class MesaOut(BaseModel):
