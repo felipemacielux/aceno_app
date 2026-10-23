@@ -149,12 +149,7 @@ Rota `/painel/`.
 4. **Visão Chamados:**
    - **Desktop:** kanban com 3 colunas: Pendentes, Em Atendimento e Concluídos.
    - **Mobile (< 768 px):** abas no lugar das colunas, com contador nos Pendentes.
-   - **Card:** número da mesa grande, tipo com ícone, forma de pagamento quando houver, e tempo decorrido ao vivo ("há 45s").
-     - Pendente: amarelo pulsando, com o botão "Aceitar".
-     - Urgente: vermelho pulsando, com o selo "URGENTE".
-     - Em atendimento: azul, com o botão "Concluir".
-     - Concluído: cinza, mostrando o tempo total.
-   - Ao concluir um `fechar_conta`, aparece o diálogo "Fechar a Mesa N?" (M5).
+   - **Card:** Aparência dos cards e do kanban: ver `specs/spec-kanban.md`.
 5. **Visão Mesas:** grade com as mesas, em botões grandes e fáceis de tocar no celular.
    - Fechada: cinza, com a ação "Abrir".
    - Aberta sem chamados: verde, mostrando há quanto tempo está aberta e a ação "Fechar".

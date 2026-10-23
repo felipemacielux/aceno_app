@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { aceitar, ApiError, concluir, fecharMesa } from "../api";
-import { getNomeEstabelecimento, getToken, limparAuth } from "../auth";
+import { getToken, limparAuth } from "../auth";
 import { ConfirmarFecharMesaDialog } from "../components/ConfirmarFecharMesaDialog";
 import { Header } from "../components/Header";
 import { IniciarTurnoOverlay } from "../components/IniciarTurnoOverlay";
 import { Kanban } from "../components/Kanban";
+import { MetricasFaixa } from "../components/MetricasFaixa";
 import { notificarNovoChamado } from "../notificacoes";
 import { temUrgentePendente, tocarBipeNovo, tocarBipeUrgente } from "../sound";
 import { useTituloPiscante } from "../titulo";
@@ -16,6 +17,7 @@ export function OperacaoPage() {
   const navigate = useNavigate();
   const token = getToken();
   const [turnoIniciado, setTurnoIniciado] = useState(false);
+  const [busca, setBusca] = useState("");
   const [fecharMesaPendente, setFecharMesaPendente] = useState<{ mesaId: number; numero: number } | null>(
     null
   );
@@ -40,6 +42,9 @@ export function OperacaoPage() {
   }, [mesas]);
 
   const listaSolicitacoes = Object.values(solicitacoes);
+  const listaFiltrada = busca.trim()
+    ? listaSolicitacoes.filter((s) => String(mesas[s.mesa_id]?.numero ?? s.mesa_id).includes(busca.trim()))
+    : listaSolicitacoes;
 
   useTituloPiscante(
     listaSolicitacoes
@@ -80,15 +85,21 @@ export function OperacaoPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="flex min-h-screen flex-col bg-gradient-to-b from-aceno-escuro via-aceno-medio to-aceno-claro">
       {!turnoIniciado && <IniciarTurnoOverlay onIniciar={() => setTurnoIniciado(true)} />}
-      <Header nomeEstabelecimento={getNomeEstabelecimento() ?? ""} wsStatus={wsStatus} />
-      <Kanban
-        solicitacoes={listaSolicitacoes}
-        mesas={mesas}
-        onAceitar={handleAceitar}
-        onConcluir={handleConcluir}
-      />
+      <Header wsStatus={wsStatus} busca={busca} onBuscaChange={setBusca} />
+      <div className="mx-auto flex w-full max-w-screen-2xl flex-1 flex-col px-4 lg:px-6">
+        <MetricasFaixa solicitacoes={listaSolicitacoes} mesas={mesas} />
+        <Kanban
+          solicitacoes={listaFiltrada}
+          mesas={mesas}
+          onAceitar={handleAceitar}
+          onConcluir={handleConcluir}
+        />
+      </div>
+      <footer className="border-t border-green-900/10 py-3 text-center text-xs text-green-900/70">
+        Aceno 👋 · Painel da operação
+      </footer>
       {fecharMesaPendente && (
         <ConfirmarFecharMesaDialog
           mesaNumero={fecharMesaPendente.numero}
