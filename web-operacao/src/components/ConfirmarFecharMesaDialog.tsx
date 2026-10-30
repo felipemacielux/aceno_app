@@ -1,24 +1,23 @@
+import { Button } from "../ui/Button";
+
 interface Props {
-  mesaNumero: number;
+  mensagem: string;
   onConfirmar: () => void;
   onCancelar: () => void;
 }
 
-export function ConfirmarFecharMesaDialog({ mesaNumero, onConfirmar, onCancelar }: Props) {
+export function ConfirmarFecharMesaDialog({ mensagem, onConfirmar, onCancelar }: Props) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="rounded-lg bg-white p-6 shadow-xl">
-        <p className="mb-4 text-lg">Fechar a Mesa {mesaNumero}?</p>
+      <div className="rounded-2xl bg-white p-6 shadow-xl">
+        <p className="mb-4 text-lg text-texto">{mensagem}</p>
         <div className="flex justify-end gap-2">
-          <button onClick={onCancelar} className="rounded px-4 py-2 text-gray-600 hover:bg-gray-100">
+          <Button variante="secondary" onClick={onCancelar}>
             Não
-          </button>
-          <button
-            onClick={onConfirmar}
-            className="rounded bg-emerald-600 px-4 py-2 text-white hover:bg-emerald-700"
-          >
+          </Button>
+          <Button variante="brand" onClick={onConfirmar}>
             Sim
-          </button>
+          </Button>
         </div>
       </div>
     </div>

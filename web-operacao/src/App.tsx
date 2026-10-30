@@ -1,8 +1,6 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { getToken } from "./auth";
-import { Header } from "./components/Header";
 import { Kanban } from "./components/Kanban";
-import { MetricasFaixa } from "./components/MetricasFaixa";
 import { LoginPage } from "./pages/LoginPage";
 import { OperacaoPage } from "./pages/OperacaoPage";
 import type { MesaOut, SolicitacaoOut } from "./types";
@@ -21,15 +19,14 @@ const MOCK_SOLICITACOES: SolicitacaoOut[] = [
 
 function PreviewKanban() {
   return (
-    <div className="flex min-h-screen flex-col bg-gradient-to-b from-aceno-escuro via-aceno-medio to-aceno-claro">
-      <Header wsStatus="conectado" busca="" onBuscaChange={() => {}} />
-      <div className="mx-auto flex w-full max-w-screen-2xl flex-1 flex-col px-4 lg:px-6">
-        <MetricasFaixa solicitacoes={MOCK_SOLICITACOES} mesas={MOCK_MESAS} />
-        <Kanban solicitacoes={MOCK_SOLICITACOES} mesas={MOCK_MESAS} onAceitar={() => {}} onConcluir={() => {}} />
-      </div>
-      <footer className="border-t border-green-900/10 py-3 text-center text-xs text-green-900/70">
-        Aceno 👋 · Painel da operação
-      </footer>
+    <div className="min-h-screen bg-fundo p-6">
+      <Kanban
+        solicitacoes={MOCK_SOLICITACOES}
+        mesas={MOCK_MESAS}
+        ordenacao="mais_antigos"
+        onAceitar={() => {}}
+        onConcluir={() => {}}
+      />
     </div>
   );
 }

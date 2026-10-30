@@ -5,6 +5,7 @@ export function temUrgentePendente(solicitacoes: SolicitacaoOut[]): boolean {
 }
 
 let audioContext: AudioContext | null = null;
+let silenciado = localStorage.getItem("operacao.silenciado") === "1";
 
 export function desbloquearAudio(): void {
   if (audioContext === null) {
@@ -12,8 +13,17 @@ export function desbloquearAudio(): void {
   }
 }
 
+export function getSilenciado(): boolean {
+  return silenciado;
+}
+
+export function setSilenciado(valor: boolean): void {
+  silenciado = valor;
+  localStorage.setItem("operacao.silenciado", valor ? "1" : "0");
+}
+
 function bipe(frequenciaHz: number, duracaoMs: number): void {
-  if (audioContext === null) return;
+  if (audioContext === null || silenciado) return;
   const oscilador = audioContext.createOscillator();
   const ganho = audioContext.createGain();
   oscilador.frequency.value = frequenciaHz;

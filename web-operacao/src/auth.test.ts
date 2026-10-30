@@ -5,7 +5,7 @@ describe("auth", () => {
   beforeEach(() => localStorage.clear());
 
   it("salvarAuth persists token and nome_estabelecimento", () => {
-    salvarAuth({ access_token: "abc", token_type: "bearer", nome_estabelecimento: "Bar do Zé" });
+    salvarAuth({ access_token: "abc", token_type: "bearer", nome_estabelecimento: "Bar do Zé" }, "joao");
     expect(getToken()).toBe("abc");
     expect(getNomeEstabelecimento()).toBe("Bar do Zé");
   });
@@ -15,7 +15,7 @@ describe("auth", () => {
   });
 
   it("limparAuth removes stored values", () => {
-    salvarAuth({ access_token: "abc", token_type: "bearer", nome_estabelecimento: "Bar do Zé" });
+    salvarAuth({ access_token: "abc", token_type: "bearer", nome_estabelecimento: "Bar do Zé" }, "joao");
     limparAuth();
     expect(getToken()).toBeNull();
     expect(getNomeEstabelecimento()).toBeNull();

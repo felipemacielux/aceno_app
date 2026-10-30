@@ -19,7 +19,7 @@ describe("api", () => {
   });
 
   it("listarMesas sends Authorization header when token is stored", async () => {
-    salvarAuth({ access_token: "tok123", token_type: "bearer", nome_estabelecimento: "X" });
+    salvarAuth({ access_token: "tok123", token_type: "bearer", nome_estabelecimento: "X" }, "op");
     const mesas = [{ id: 1, numero: 1, status: "aberta", aberta_em: null }];
     const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => mesas });
     vi.stubGlobal("fetch", fetchMock);
@@ -29,7 +29,7 @@ describe("api", () => {
   });
 
   it("throws ApiError with status+erro on non-2xx", async () => {
-    salvarAuth({ access_token: "tok123", token_type: "bearer", nome_estabelecimento: "X" });
+    salvarAuth({ access_token: "tok123", token_type: "bearer", nome_estabelecimento: "X" }, "op");
     vi.stubGlobal(
       "fetch",
       vi.fn().mockResolvedValue({
